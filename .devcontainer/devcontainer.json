@@ -1,0 +1,14 @@
+{
+  "name": "PlutoSDR Quickstart",
+  "build": {
+    "dockerfile": "../docker/Dockerfile",
+    "context": ".."
+  },
+  "runArgs": ["--network=host"],
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  },
+  "postCreateCommand": "python3 examples/hello_pluto.py || true"
+}
