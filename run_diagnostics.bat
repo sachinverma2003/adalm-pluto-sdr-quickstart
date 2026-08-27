@@ -30,7 +30,7 @@ if not defined PY_CMD (
     exit /b 1
 )
 
-%PY_CMD% "scripts\pluto_diagnostics.py"
+%PY_CMD% "scripts\pluto_diagnostics.py" %*
 
 echo.
 pause

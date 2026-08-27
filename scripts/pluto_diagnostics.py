@@ -13,14 +13,13 @@ import time
 import subprocess
 
 try:
+    import iio
     import adi
     import numpy as np
 except ImportError:
     print("[!] Error: Required dependencies not found in current environment.")
     print("    Activate your venv and run: pip install -r requirements.txt")
     sys.exit(1)
-
-PLUTO_URI = sys.argv[1] if len(sys.argv) > 1 else "ip:192.168.2.1"
 
 
 def print_banner(title):
@@ -29,12 +28,59 @@ def print_banner(title):
     print("=" * 60)
 
 
+def discover_pluto_uri(explicit_uri=None):
+    """
+    Finds and resolves the Pluto SDR URI:
+    1. If explicit URI is provided, uses it directly.
+    2. Otherwise, scans local network and USB for Pluto contexts via libiio.
+    3. Falls back to probing standard candidate IPs (192.168.2.1, 192.168.3.1, etc.).
+    """
+    if explicit_uri:
+        return explicit_uri
+
+    print("[*] Auto-scanning for connected Pluto SDRs (USB & Network)...", flush=True)
+
+    # 1. Scan via libiio context scanner
+    try:
+        ctxs = iio.scan_contexts()
+        if ctxs:
+            for uri, desc in ctxs.items():
+                if "Pluto" in desc or "pluto" in uri.lower():
+                    print(f"    [+] Found: {uri} ({desc})")
+                    return uri
+            # If any IIO context found, return the first
+            first_uri = list(ctxs.keys())[0]
+            print(f"    [+] Found context: {first_uri}")
+            return first_uri
+    except Exception:
+        pass
+
+    # 2. Fallback candidate probing
+    candidates = [
+        "ip:192.168.2.1",
+        "ip:192.168.3.1",
+        "ip:pluto.local",
+        "usb:",
+    ]
+    for cand in candidates:
+        try:
+            test_sdr = adi.Pluto(uri=cand)
+            print(f"    [+] Connected via candidate: {cand}")
+            del test_sdr
+            return cand
+        except Exception:
+            continue
+
+    # Default fallback
+    return "ip:192.168.2.1"
+
+
 def check_ping(ip_or_host):
     target = ip_or_host.replace("ip:", "")
     param = "-n" if sys.platform == "win32" else "-c"
     cmd = ["ping", param, "1", target]
     try:
-        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
+        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2)
         return res.returncode == 0
     except Exception:
         return False
@@ -42,20 +88,23 @@ def check_ping(ip_or_host):
 
 def main():
     print_banner("ADALM-PLUTO SDR Hardware Diagnostics")
-    print(f"[*] Target URI: {PLUTO_URI}")
+
+    requested_uri = sys.argv[1] if len(sys.argv) > 1 else None
+    target_uri = discover_pluto_uri(requested_uri)
+    print(f"[*] Target URI: {target_uri}")
 
     # 1. Network check
-    if PLUTO_URI.startswith("ip:"):
+    if target_uri.startswith("ip:"):
         print("[*] Testing IP network reachability...", end=" ", flush=True)
-        if check_ping(PLUTO_URI):
+        if check_ping(target_uri):
             print("PASS (Host responded to ping)")
         else:
-            print("WARNING (Ping timed out or ICMP blocked - continuing anyway)")
+            print("NOTE (Ping timed out/blocked or mDNS - continuing)")
 
     # 2. IIO Context Connection
     print("[*] Connecting via pyadi-iio...", end=" ", flush=True)
     try:
-        sdr = adi.Pluto(uri=PLUTO_URI)
+        sdr = adi.Pluto(uri=target_uri)
         print("CONNECTED successfully!")
     except Exception as e:
         print("FAILED")
@@ -64,7 +113,7 @@ def main():
         print("  1. Is the USB cable connected to the MIDDLE port labeled 'USB' (not 'POWER')?")
         print("  2. Does the cable support data transfer (not charging-only)?")
         print("  3. Did you wait ~15-20 seconds after plugging in for the Pluto to boot?")
-        print("  4. On Windows, verify 'Remote NDIS Compatible Device' in Device Manager.")
+        print("  4. If custom IP, run: python scripts/pluto_diagnostics.py ip:<your-ip>")
         sys.exit(1)
 
     # 3. System & Firmware Telemetry

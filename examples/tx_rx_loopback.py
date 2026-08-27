@@ -14,14 +14,38 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 try:
+    import iio
     import adi
 except ImportError:
     print("pyadi-iio is not installed. Activate your venv and run:")
     print("  pip install -r requirements.txt")
     sys.exit(1)
 
-# Default Pluto IP over USB, or pass custom URI as command line argument
-PLUTO_URI = sys.argv[1] if len(sys.argv) > 1 else "ip:192.168.2.1"
+
+def find_pluto_uri():
+    """Returns explicit CLI argument or auto-discovers connected Pluto."""
+    if len(sys.argv) > 1:
+        return sys.argv[1]
+    try:
+        ctxs = iio.scan_contexts()
+        for uri, desc in ctxs.items():
+            if "Pluto" in desc or "pluto" in uri.lower():
+                return uri
+        if ctxs:
+            return list(ctxs.keys())[0]
+    except Exception:
+        pass
+    for cand in ["ip:192.168.2.1", "ip:192.168.3.1", "ip:pluto.local"]:
+        try:
+            test_sdr = adi.Pluto(uri=cand)
+            del test_sdr
+            return cand
+        except Exception:
+            continue
+    return "ip:192.168.2.1"
+
+
+PLUTO_URI = find_pluto_uri()
 CENTER_FREQ = int(915e6)  # 915 MHz (ISM band, valid on stock 325-3800 MHz Pluto)
 SAMPLE_RATE = int(2e6)
 TONE_FREQ = 100e3  # 100 kHz tone offset
