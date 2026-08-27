@@ -12,10 +12,11 @@ try:
     import adi
 except ImportError:
     print("pyadi-iio is not installed. Activate your venv and run:")
-    print("  pip install pyadi-iio")
+    print("  pip install -r requirements.txt")
     sys.exit(1)
 
-PLUTO_URI = "ip:192.168.2.1"  # default Pluto IP over USB
+# Default Pluto IP over USB, or allow passing URI via command-line argument
+PLUTO_URI = sys.argv[1] if len(sys.argv) > 1 else "ip:192.168.2.1"
 
 
 def main():
@@ -25,7 +26,7 @@ def main():
     except Exception as e:
         print(f"Failed to connect: {e}")
         print("Checklist:")
-        print("  - Is the Pluto plugged in and its LED on?")
+        print("  - Is the Pluto plugged into the middle 'USB' port (not 'POWER') and its LED on?")
         print("  - Did the driver/network setup step complete?")
         print("  - Try: ping 192.168.2.1")
         sys.exit(1)
@@ -37,7 +38,8 @@ def main():
     print(f"  RX buffer size:   {sdr.rx_buffer_size}")
 
     print("\nCapturing a small block of samples...")
-    sdr.rx_lo = int(100e6)  # 100 MHz, just to have a defined LO
+    # 915 MHz is within the stock AD9363 range (325 MHz - 3800 MHz)
+    sdr.rx_lo = int(915e6)
     sdr.rx_buffer_size = 1024
     samples = sdr.rx()
     print(f"  Got {len(samples)} IQ samples. First 5: {samples[:5]}")

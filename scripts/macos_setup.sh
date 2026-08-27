@@ -14,15 +14,15 @@ fi
 echo "==> Installing libiio via Homebrew"
 brew install libiio
 
-echo "==> Creating Python virtual environment"
+echo "==> Creating Python virtual environment in .venv"
 python3 -m venv "$REPO_ROOT/.venv"
-source "$REPO_ROOT/.venv/bin/activate"
-pip install --upgrade pip
-pip install pyadi-iio numpy matplotlib
+"$REPO_ROOT/.venv/bin/pip" install --upgrade pip
+"$REPO_ROOT/.venv/bin/pip" install -r "$REPO_ROOT/requirements.txt"
 
 cat <<'EOF'
 
 ==> Plug in your PlutoSDR now if you haven't already.
+    (Make sure it is connected to the middle 'USB' port, not 'POWER')
     macOS should show a new network interface for it automatically.
     If it doesn't appear within ~20s, go to:
     System Settings -> Network -> and check for a "RNDIS/Ethernet Gadget"
@@ -30,10 +30,11 @@ cat <<'EOF'
 EOF
 read -rp "Press Enter once the network interface is up... "
 
-echo "==> Running hello_pluto.py"
-python3 "$REPO_ROOT/examples/hello_pluto.py" || {
+echo "==> Running hello_pluto.py..."
+"$REPO_ROOT/.venv/bin/python" "$REPO_ROOT/examples/hello_pluto.py" || {
+    echo ""
     echo "Could not reach Pluto at ip:192.168.2.1 yet. Re-run after checking the network interface:"
-    echo "  source .venv/bin/activate && python3 examples/hello_pluto.py"
+    echo "  .venv/bin/python examples/hello_pluto.py"
 }
 
 echo ""

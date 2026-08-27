@@ -34,24 +34,26 @@ case "$PM" in
 esac
 
 echo "==> Installing udev rule for PlutoSDR (no-sudo USB access)"
-UDEV_RULE='SUBSYSTEM=="usb", ATTR{idVendor}=="0456", ATTR{idProduct}=="b673", MODE="0666", GROUP="plugdev"'
+UDEV_RULE='SUBSYSTEM=="usb", ATTRS{idVendor}=="0456", ATTRS{idProduct}=="b673", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0456", ATTRS{idProduct}=="b674", MODE="0666", GROUP="plugdev", TAG+="uaccess"'
 echo "$UDEV_RULE" | sudo tee /etc/udev/rules.d/53-adi-plutosdr-usb.rules >/dev/null
-sudo udevadm control --reload-rules
-sudo udevadm trigger
+sudo udevadm control --reload-rules || true
+sudo udevadm trigger || true
 
-echo "==> Creating Python virtual environment"
+echo "==> Creating Python virtual environment in .venv"
 python3 -m venv "$REPO_ROOT/.venv"
-source "$REPO_ROOT/.venv/bin/activate"
-pip install --upgrade pip
-pip install pyadi-iio numpy matplotlib
+"$REPO_ROOT/.venv/bin/pip" install --upgrade pip
+"$REPO_ROOT/.venv/bin/pip" install -r "$REPO_ROOT/requirements.txt"
 
 echo "==> Plug in your PlutoSDR now if you haven't already."
+echo "    (Make sure it is connected to the middle 'USB' port, not 'POWER')"
 read -rp "Press Enter once it's plugged in and its LED is steady... "
 
-echo "==> Running hello_pluto.py"
-python3 "$REPO_ROOT/examples/hello_pluto.py" || {
+echo "==> Running hello_pluto.py..."
+"$REPO_ROOT/.venv/bin/python" "$REPO_ROOT/examples/hello_pluto.py" || {
+    echo ""
     echo "Could not reach Pluto at ip:192.168.2.1 yet. Wait a few seconds and re-run:"
-    echo "  source .venv/bin/activate && python3 examples/hello_pluto.py"
+    echo "  .venv/bin/python examples/hello_pluto.py"
 }
 
 echo ""

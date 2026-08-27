@@ -10,10 +10,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir pyadi-iio numpy matplotlib
-
 WORKDIR /work
+
+COPY requirements.txt /work/
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY examples /work/examples
+COPY scripts /work/scripts
 
 # Container must be run with --network host so it can reach the
 # Pluto's default IP (192.168.2.1) exposed on the Linux host's USB
