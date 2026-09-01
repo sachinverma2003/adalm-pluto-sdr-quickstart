@@ -71,16 +71,19 @@ Factory-stock Plutos support **325 MHz to 3800 MHz**. You can safely unlock the 
 
 ---
 
-## 📁 Example Scripts Included
+## 📁 Example Scripts Included (1-Click Run)
 
-- `examples/hello_pluto.py` — connects and prints basic device info (LO frequency, sample rates, buffer) and captures test IQ samples.
-- `examples/tx_rx_loopback.py` — generates and transmits a 100 kHz tone at 915 MHz, captures the RX buffer, and saves + displays the FFT frequency spectrum (`rx_loopback_spectrum.png`).
+You don't need to manually activate any virtual environments. You can run examples directly:
 
-> **Tip**: All example scripts accept a custom URI as an optional command-line argument:
+- **Double-click `run_hello_pluto.bat`** (or `examples/hello_pluto.py`) — connects and prints basic device info (LO frequency, sample rates, buffer) and captures test IQ samples.
+- **Double-click `run_loopback.bat`** (or `examples/tx_rx_loopback.py`) — generates and transmits a 100 kHz tone at 915 MHz, captures the RX buffer, and saves + displays the FFT frequency spectrum (`rx_loopback_spectrum.png`).
+- **Double-click `run.bat`** — an interactive quick launcher menu to choose any example script, launch diagnostics, or open an interactive Python shell with `pyadi-iio`.
+
+> **Tip**: All example scripts can also be run from terminal without activation:
 > ```bash
-> python examples/hello_pluto.py ip:192.168.2.1
-> # or over direct USB context:
-> python examples/hello_pluto.py usb:1.2.5
+> .\run.bat examples\hello_pluto.py ip:192.168.2.1
+> # or via venv python directly:
+> .\.venv\Scripts\python.exe examples\hello_pluto.py
 > ```
 
 ---
