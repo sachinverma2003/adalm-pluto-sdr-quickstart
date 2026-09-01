@@ -17,10 +17,10 @@ try:
     import iio
     import adi
     import numpy as np
-except ImportError:
-    print("[!] Error: Required dependencies not found in current environment.")
-    print("    Activate your venv and run: pip install -r requirements.txt")
-    sys.exit(1)
+    HAS_ADI = True
+except Exception as e:
+    HAS_ADI = False
+    IMPORT_ERR = e
 
 
 def print_banner(title):
@@ -36,6 +36,9 @@ def scan_all_plutos():
     """
     discovered = []
     seen_serials = set()
+
+    if not HAS_ADI:
+        return discovered
 
     try:
         ctxs = iio.scan_contexts()
@@ -94,6 +97,11 @@ def diagnose_single_pluto(target_uri, device_index=1, total_devices=1):
             print("PASS (Host responded to ping)")
         else:
             print("NOTE (Ping timed out/blocked or mDNS - continuing)")
+
+    if not HAS_ADI:
+        print(f"\n[!] Error loading pyadi-iio / libiio drivers: {IMPORT_ERR}")
+        print("    Ensure libiio is installed and python environment is activated.")
+        return False
 
     # 2. IIO Context Connection
     print(f"[*] Connecting to {target_uri} via pyadi-iio...", end=" ", flush=True)
@@ -213,6 +221,15 @@ def diagnose_single_pluto(target_uri, device_index=1, total_devices=1):
 
 def main():
     print_banner("ADALM-PLUTO SDR Multi-Device Diagnostics")
+
+    if not HAS_ADI:
+        print(f"[!] Warning: pyadi-iio driver components could not be loaded: {IMPORT_ERR}")
+        print("[*] Checking IP ping reachability to default Pluto IP (192.168.2.1)...")
+        if check_ping("192.168.2.1"):
+            print("[+] Ping test PASSED! Host 192.168.2.1 responded.")
+        else:
+            print("[-] Ping test failed / timed out for 192.168.2.1.")
+        return
 
     # If user provided a specific URI via CLI, test only that one
     if len(sys.argv) > 1:
