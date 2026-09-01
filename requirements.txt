@@ -1,3 +1,4 @@
 pyadi-iio
 numpy
+scipy
 matplotlib

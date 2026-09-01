@@ -16,7 +16,7 @@ hunting, no reading through confusing wiki pages.
    - Request Administrator approval (UAC) to install USB drivers.
    - Silently download and install the official signed ADI USB/RNDIS drivers.
    - Install Python 3.12 via winget if not already present.
-   - Create the Python virtual environment (`.venv`) and install all required libraries (`pyadi-iio`, `numpy`, `matplotlib`).
+   - Create the Python virtual environment (`.venv`) and install all required libraries (`pyadi-iio`, `numpy`, `scipy`, `matplotlib`).
    - Prompt you to plug in the Pluto and run `examples/hello_pluto.py` to confirm everything works.
 
 > **Manual PowerShell Alternative**: If you prefer running PowerShell manually:
@@ -58,6 +58,34 @@ Factory-stock Plutos support **325 MHz to 3800 MHz**. You can safely unlock the 
 
 ---
 
+## 📻 Real-World RF Application Examples
+
+This repository includes a suite of practical real-world RF application scripts. All scripts feature automatic frequency bounds checking (stock **325–3800 MHz** vs unlocked **70–6000 MHz**) and built-in **`--sim` synthetic simulation modes** so you can test and run them even without physical SDR hardware connected:
+
+- **`examples/adsb_receiver.py`** — Aircraft Radar Receiver (1090 MHz Mode-S):
+  - Captures 1090 MHz ADS-B pulse signals (stock range safe: 325–3800 MHz).
+  - Correlates Mode-S preambles and decodes ICAO 24-bit aircraft hex addresses (`adsb_pulse.png`).
+- **`examples/digital_modem.py`** — BPSK / QPSK Loopback Modem Lab (915 MHz):
+  - Transmits and demodulates BPSK/QPSK digital signals (stock range safe: 325–3800 MHz).
+  - Plots IQ Constellation Diagram and Eye Diagram (`digital_constellation.png`).
+- **`examples/rf_power_sweeper.py`** — Wideband Spectrum RSSI Power Sweeper (800–1000 MHz):
+  - Sweeps across a wideband frequency range and logs RSSI received power levels (`rf_power_sweep.png`).
+  - Identifies peak active RF frequencies in the band.
+- **`examples/fm_radio.py`** — WFM / NFM Demodulator & Audio WAV Recorder (98.5 MHz):
+  - Performs Quadrature FM demodulation and outputs 48 kHz PCM WAV audio (`fm_audio.wav` & `fm_radio_spectrum.png`).
+  - *Frequency Range Note*: Commercial FM broadcast (88–108 MHz) requires AD9364 unlocked mode (<325 MHz). The script automatically probes hardware capabilities and alerts stock users.
+
+- **`examples/hello_pluto.py`** — Basic connectivity and hardware inspection test.
+- **`examples/tx_rx_loopback.py`** — Basic loopback tone transmission and FFT spectrum plot.
+
+> **Tip**: All example scripts accept `--sim` to run in simulation mode or a custom URI argument:
+> ```bash
+> python examples/adsb_receiver.py --sim
+> python examples/digital_modem.py ip:192.168.2.1
+> ```
+
+---
+
 ## 💻 Using it in VS Code
 
 1. Open this folder in VS Code (`code .` from the repo folder, or File > Open Folder).
@@ -68,20 +96,6 @@ Factory-stock Plutos support **325 MHz to 3800 MHz**. You can safely unlock the 
    import adi
    sdr = adi.Pluto(uri="ip:192.168.2.1")
    ```
-
----
-
-## 📁 Example Scripts Included
-
-- `examples/hello_pluto.py` — connects and prints basic device info (LO frequency, sample rates, buffer) and captures test IQ samples.
-- `examples/tx_rx_loopback.py` — generates and transmits a 100 kHz tone at 915 MHz, captures the RX buffer, and saves + displays the FFT frequency spectrum (`rx_loopback_spectrum.png`).
-
-> **Tip**: All example scripts accept a custom URI as an optional command-line argument:
-> ```bash
-> python examples/hello_pluto.py ip:192.168.2.1
-> # or over direct USB context:
-> python examples/hello_pluto.py usb:1.2.5
-> ```
 
 ---
 
@@ -142,12 +156,18 @@ VS Code Dev Container configuration is also provided in `.devcontainer/devcontai
 │   └── unlocking_ad9364.md # Step-by-step guide to unlock 70 MHz - 6 GHz & dual core
 ├── examples/
 │   ├── hello_pluto.py    # Basic connectivity and device inspection test
-│   └── tx_rx_loopback.py # Loopback tone transmission & FFT spectrum plot
+│   ├── tx_rx_loopback.py # Loopback tone transmission & FFT spectrum plot
+│   ├── adsb_receiver.py  # 1090 MHz aircraft Mode-S pulse receiver & decoder
+│   ├── digital_modem.py  # BPSK / QPSK digital transmission & constellation lab
+│   ├── rf_power_sweeper.py # Wideband spectrum RSSI power sweeper & peak scanner
+│   └── fm_radio.py       # FM radio demodulator & audio WAV recorder
 ├── scripts/
 │   ├── pluto_diagnostics.py # Hardware health check, probe & benchmark
 │   ├── windows_setup.ps1 # Windows driver & venv setup script
 │   ├── linux_setup.sh    # Linux packages, udev rules & venv setup
 │   └── macos_setup.sh    # macOS Homebrew & venv setup
-├── requirements.txt      # Python dependencies (pyadi-iio, numpy, matplotlib)
+├── tests/
+│   └── test_examples.py  # Automated pytest test suite for examples & frequency bounds
+├── requirements.txt      # Python dependencies (pyadi-iio, numpy, scipy, matplotlib)
 └── README.md
 ```
