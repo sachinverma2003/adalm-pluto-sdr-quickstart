@@ -6,14 +6,31 @@ Run this after setup to sanity-check your environment before writing
 your own scripts.
 """
 
+import os
 import sys
+
+# Configure Windows DLL search directories for libiio if running on Windows
+if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
+    for _dll_dir in [
+        os.path.join(sys.prefix, "Scripts"),
+        os.path.join(sys.prefix, "Lib", "site-packages"),
+        r"C:\Program Files\libiio",
+        r"C:\Program Files (x86)\libiio",
+        r"C:\Program Files\PothosSDR\bin",
+        r"C:\Windows\System32",
+    ]:
+        if os.path.isdir(_dll_dir):
+            try:
+                os.add_dll_directory(_dll_dir)
+            except Exception:
+                pass
 
 try:
     import iio
     import adi
-except ImportError:
-    print("pyadi-iio is not installed. Activate your venv and run:")
-    print("  pip install -r requirements.txt")
+except (ImportError, TypeError, OSError) as _err:
+    print(f"Error loading pyadi-iio / libiio: {_err}")
+    print("Please run 'setup.bat' or activate your venv and verify libiio is installed.")
     sys.exit(1)
 
 
